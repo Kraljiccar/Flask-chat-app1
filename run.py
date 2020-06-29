@@ -1,12 +1,15 @@
 import os
-from flask import Flask, redirect
+from datetime import datetime
+from flask import Flask, redirect, render_template, request, session
 
 app = Flask(__name__)
+app.secret_key = "nemanja123"
 messages= []
 
 def add_messages(username, message):
     """Add messages to the 'messages' list"""
-    messages.append("{}: {}".format(username, message))
+    now = datetime.now().strftime("%H:%M:%S")
+    messages.append("({}) {}: {}".format(now, username, message))
 
 def get_all_messages():
     """Get all of the messages and separate them with a 'br'"""
@@ -14,10 +17,17 @@ def get_all_messages():
 
 
 
-@app.route('/')
+@app.route('/', methods = ["GET", "POST"])
 def index():
     """Main page with instructions"""
-    return "To send a message use /USERNAME/MESSAGE"
+
+    if request.method == "POST":
+        session["username"] = request.form["username"]
+
+    if "username" in session:
+        return redirect(session["username"])
+
+    return render_template("index.html")
 
 
 @app.route('/<username>')
@@ -30,7 +40,7 @@ def user(username):
 def send_message(username, message):
     """Create a new massage and redirect back to chat page"""
     add_messages(username, message)
-    return redirect(username)
+    return redirect("/" + username)
 
 if __name__ =="__main__":
     app.run(host=os.getenv("IP"),
